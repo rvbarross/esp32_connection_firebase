@@ -2,21 +2,36 @@
 #include <FirebaseESP32.h>
  
  
-#define FIREBASE_HOST "https://esp32andandroid-default-rtdb.firebaseio.com/"
-#define FIREBASE_AUTH "GJuW80c7q0n5Os7XGagfRx4ldxBkwyKL9l6MORvX"
+#define FIREBASE_HOST "https://cps-gh-default-rtdb.firebaseio.com/"
+#define FIREBASE_AUTH "vlkS0EF5RGuf4CudV8hr68Ksc34LcL0HN5Qu87nj"
 //Colocar noem da rede e senha.
-#define WIFI_SSID "nome_da_rede"
-#define WIFI_PASSWORD "senha_da_rede"
+#define WIFI_SSID "BARROS"
+#define WIFI_PASSWORD "lulalivre"
 
 //Define FirebaseESP32 data object
 FirebaseData firebaseData;
 FirebaseJson json;
 
-const int vazao = 27;
+const int INTERRUPCAO_SENSOR = 27; //interrupt = 0 equivale ao pino digital 2
+const int PINO_SENSOR = 27;
+
+//definicao da variavel de contagem de voltas
+unsigned long contador = 0;
+
+//definicao do fator de calibracao para conversao do valor lido
+const float FATOR_CALIBRACAO = 4.5;
+
+//definicao das variaveis de fluxo e volume
+float fluxo = 0;
+float volume = 0;
+float volume_total = 0;
+
+//definicao da variavel de intervalo de tempo
+unsigned long tempo_antes = 0;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(vazao, INPUT);
+  pinMode(PINO_SENSOR, INPUT);
   Serial.begin(115200);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   
@@ -55,9 +70,50 @@ void setup() {
 }
 
 void loop() {
+  if((millis() - tempo_antes) > 1000){
+
+    //desabilita a interrupcao para realizar a conversao do valor de pulsos
+    detachInterrupt(INTERRUPCAO_SENSOR);
+
+    //conversao do valor de pulsos para L/min
+    fluxo = ((1000.0 / (millis() - tempo_antes)) * contador) / FATOR_CALIBRACAO;
+
+    //exibicao do valor de fluxo
+    Serial.print("Fluxo de: ");
+    Serial.print(fluxo);
+    Serial.println(" L/min");
+
+    //calculo do volume em L passado pelo sensor
+    volume = fluxo / 60;
+
+    //armazenamento do volume
+    volume_total += volume;
+    json.set("/vazao_value", volume_total);
+    Firebase.updateNode(firebaseData,"/Sensor",json);
+
+    //exibicao do valor de volume
+    Serial.print("Volume: ");
+    Serial.print(volume_total);
+    Serial.println(" L");
+    Serial.println();
+   
+    //reinicializacao do contador de pulsos
+    contador = 0;
+
+    //atualizacao da variavel tempo_antes
+    tempo_antes = millis();
+
+    //contagem de pulsos do sensor
+    attachInterrupt(INTERRUPCAO_SENSOR, contador_pulso, FALLING);
+    
+  }
   // put your main code here, to run repeatedly:
-  int vazaoValue = digitalRead(vazao);
-  Serial.println(vazaoValue);
-  json.set("/vazao", vazaoValue);
-  Firebase.updateNode(firebaseData,"/Sensor",json);
+  
+  
+}
+
+void contador_pulso() {
+  
+  contador++;
+  
 }
