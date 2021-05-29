@@ -5,8 +5,8 @@
 #define FIREBASE_HOST "https://cps-gh-default-rtdb.firebaseio.com/"
 #define FIREBASE_AUTH "vlkS0EF5RGuf4CudV8hr68Ksc34LcL0HN5Qu87nj"
 //Colocar noem da rede e senha.
-#define WIFI_SSID "BARROS"
-#define WIFI_PASSWORD "lulalivre"
+#define WIFI_SSID "nome_da_rede"
+#define WIFI_PASSWORD "senha_da_rede"
 
 //Define FirebaseESP32 data object
 FirebaseData firebaseData;
